@@ -10,7 +10,7 @@ public:
     MainContentComponent()
     {
         setSize (800, 600);
-        setAudioChannels (0, 2); // no inputs, two outputs
+        setAudioChannels (0, 1); // no inputs, one output
     }
 
     ~MainContentComponent()
@@ -38,10 +38,13 @@ public:
         {
             // Get a pointer to the start sample in the buffer for this audio output channel
             float* const buffer = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
-            
+            float buff = 0.0f;
             // Fill the required number of samples with noise betweem -0.125 and +0.125
             for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
-                buffer[sample] = random.nextFloat() * 0.25f - 0.125f;
+            {
+                buff += 0.25f/bufferToFill.numSamples; // linear buffer level increase
+                buffer[sample] = buff;
+            }
         }
     }
 
