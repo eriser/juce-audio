@@ -20,6 +20,7 @@ public:
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override
     {
+        //blah2
         String message;
         message << "Preparing to play audio...\n";
         message << " samplesPerBlockExpected = " << samplesPerBlockExpected << "\n";
