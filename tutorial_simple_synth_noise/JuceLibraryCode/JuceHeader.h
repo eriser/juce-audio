@@ -10,7 +10,8 @@
 
 */
 
-#pragma once
+#ifndef __APPHEADERFILE_JQCFHQ__
+#define __APPHEADERFILE_JQCFHQ__
 
 #include "AppConfig.h"
 
@@ -44,3 +45,5 @@ namespace ProjectInfo
     const int          versionNumber  = 0x10000;
 }
 #endif
+
+#endif   // __APPHEADERFILE_JQCFHQ__
