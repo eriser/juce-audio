@@ -10,7 +10,8 @@
 
 */
 
-#pragma once
+#ifndef __APPHEADERFILE_XEHRN4__
+#define __APPHEADERFILE_XEHRN4__
 
 #include "AppConfig.h"
 
@@ -44,3 +45,5 @@ namespace ProjectInfo
     const int          versionNumber  = 0x10000;
 }
 #endif
+
+#endif   // __APPHEADERFILE_XEHRN4__
