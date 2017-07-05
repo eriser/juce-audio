@@ -17,7 +17,12 @@ public:
         frequencySlider.setRange (50.0, 5000.0);
         frequencySlider.setSkewFactorFromMidPoint (500.0); // [4]
         frequencySlider.addListener (this);
-        //blaj
+        
+        addAndMakeVisible (levelSlider);
+        levelSlider.setRange (0.0, 0.25);
+        levelSlider.addListener (this);
+        levelSlider.setValue (level, dontSendNotification);
+        
         setSize (600, 100);
         setAudioChannels (0, 1); // no inputs, one output
     }
@@ -30,6 +35,7 @@ public:
     void resized() override
     {
         frequencySlider.setBounds (10, 10, getWidth() - 20, 20);
+        levelSlider.setBounds (10, 30, getWidth() - 20, 20);
     }
     
     void sliderValueChanged (Slider* slider) override
@@ -39,6 +45,10 @@ public:
             if (currentSampleRate > 0.0)
                 updateAngleDelta();
         }
+        else
+        {
+            level = levelSlider.getValue ();
+        }
     }
     
     void updateAngleDelta()
@@ -46,6 +56,7 @@ public:
         const double cyclesPerSample = frequencySlider.getValue() / currentSampleRate; // [2]
         angleDelta = cyclesPerSample * 2.0 * double_Pi;                                // [3]
     }
+    
     
     void prepareToPlay (int /*samplesPerBlockExpected*/, double sampleRate) override
     {
@@ -59,7 +70,6 @@ public:
     
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override
     {
-        const float level = 0.125f;
         float* const buffer = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
         
         for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
@@ -73,7 +83,9 @@ public:
     
 private:
     Slider frequencySlider;
+    Slider levelSlider;
     double currentSampleRate, currentAngle, angleDelta; // [1]
+    float level = 0.125f;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
