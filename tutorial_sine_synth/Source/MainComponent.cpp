@@ -11,17 +11,22 @@ public:
     MainContentComponent()
     :   currentSampleRate (0.0),
         currentAngle (0.0),
-        angleDelta (0.0)
+        angleDelta (0.0),
+        currentFrequency (500.0),
+        targetFrequency (currentFrequency),
+        currentLevel (0.125f),
+        targetLevel(currentLevel)
     {
         addAndMakeVisible (frequencySlider);
         frequencySlider.setRange (50.0, 5000.0);
         frequencySlider.setSkewFactorFromMidPoint (500.0); // [4]
+        frequencySlider.setValue (currentFrequency, dontSendNotification);
         frequencySlider.addListener (this);
         
         addAndMakeVisible (levelSlider);
         levelSlider.setRange (0.0, 0.25);
         levelSlider.addListener (this);
-        levelSlider.setValue (level, dontSendNotification);
+        levelSlider.setValue (currentLevel, dontSendNotification);
         
         setSize (600, 100);
         setAudioChannels (0, 1); // no inputs, one output
@@ -41,19 +46,14 @@ public:
     void sliderValueChanged (Slider* slider) override
     {
         if (slider == &frequencySlider)
-        {
-            if (currentSampleRate > 0.0)
-                updateAngleDelta();
-        }
+            targetFrequency = frequencySlider.getValue();
         else
-        {
-            level = levelSlider.getValue ();
-        }
+            targetLevel = levelSlider.getValue ();
     }
     
     void updateAngleDelta()
     {
-        const double cyclesPerSample = frequencySlider.getValue() / currentSampleRate; // [2]
+        const double cyclesPerSample = currentFrequency / currentSampleRate; // [2]
         angleDelta = cyclesPerSample * 2.0 * double_Pi;                                // [3]
     }
     
@@ -70,13 +70,48 @@ public:
     
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override
     {
-        float* const buffer = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
         
-        for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
+        const double localTargetFrequency = targetFrequency;
+        const float localTargetLevel = targetLevel;
+
+        float* const buffer = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
+            
+        if (localTargetFrequency != currentFrequency)
         {
-            const float currentSample = (float) std::sin (currentAngle);
-            currentAngle += angleDelta;
-            buffer[sample] = currentSample * level;
+            
+            const double frequencyIncrement = (localTargetFrequency - currentFrequency) / bufferToFill.numSamples;
+            
+            for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
+            {
+                const float currentSample = (float) std::sin (currentAngle);
+                currentFrequency += frequencyIncrement;
+                updateAngleDelta();
+                currentAngle += angleDelta;
+                
+                if(localTargetLevel != currentLevel)
+                {
+                    currentLevel += (localTargetLevel - currentLevel) / bufferToFill.numSamples;
+                }
+            
+                buffer[sample] = currentSample * currentLevel;
+            }
+            
+            currentFrequency = localTargetFrequency;
+        }
+        else
+        {
+            for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
+            {
+                const float currentSample = (float) std::sin (currentAngle);
+                currentAngle += angleDelta;
+                
+                if(localTargetLevel != currentLevel)
+                {
+                    currentLevel += (localTargetLevel - currentLevel) / bufferToFill.numSamples;
+                }
+            
+                buffer[sample] = currentSample * currentLevel;
+            }
         }
     }
     
@@ -84,8 +119,8 @@ public:
 private:
     Slider frequencySlider;
     Slider levelSlider;
-    double currentSampleRate, currentAngle, angleDelta; // [1]
-    float level = 0.125f;
+    double currentSampleRate, currentAngle, angleDelta, currentFrequency, targetFrequency; // [1]
+    float currentLevel, targetLevel;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
