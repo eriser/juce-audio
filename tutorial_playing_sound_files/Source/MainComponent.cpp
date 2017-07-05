@@ -6,7 +6,8 @@
 
 class MainContentComponent   : public AudioAppComponent,
                                public ChangeListener,
-                               public Button::Listener
+                               public Button::Listener,
+                               public Timer
 {
 public:
     MainContentComponent()
@@ -28,12 +29,16 @@ public:
         stopButton.setColour (TextButton::buttonColourId, Colours::red);
         stopButton.setEnabled (false);
         
+        addAndMakeVisible (&timeLabel);
+        timeLabel.setText ("0", dontSendNotification);
+        
         setSize (300, 200);
         
         formatManager.registerBasicFormats();       // [1]
         transportSource.addChangeListener (this);   // [2]
 
         setAudioChannels (0, 2);
+        startTimer (20);
     }
     
     ~MainContentComponent()
@@ -67,6 +72,7 @@ public:
         openButton.setBounds (10, 10, getWidth() - 20, 20);
         playButton.setBounds (10, 40, getWidth() - 20, 20);
         stopButton.setBounds (10, 70, getWidth() - 20, 20);
+        timeLabel.setBounds (10, 130, getWidth() - 20, 20);
     }
     
     void changeListenerCallback (ChangeBroadcaster* source) override
@@ -80,6 +86,12 @@ public:
             else if (Pausing == state)
                 changeState (Paused);
         }
+    }
+    
+    void timerCallback() override
+    {
+        double currentTime = transportSource.getCurrentPosition();
+        timeLabel.setText (String (currentTime), dontSendNotification);
     }
 
     void buttonClicked (Button* button) override
@@ -182,6 +194,8 @@ private:
     TextButton openButton;
     TextButton playButton;
     TextButton stopButton;
+    
+    Label timeLabel;
     
     AudioFormatManager formatManager;
     ScopedPointer<AudioFormatReaderSource> readerSource;
