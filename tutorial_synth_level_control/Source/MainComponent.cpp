@@ -8,12 +8,17 @@ class MainContentComponent   : public AudioAppComponent
 public:
     MainContentComponent()
     {
-        levelSlider.setRange (0.0, 0.25);
-        levelSlider.setTextBoxStyle (Slider::TextBoxRight, false, 100, 20);
-        levelLabel.setText ("Noise Level", dontSendNotification);
+        leftLevelSlider.setRange (0.0, 0.25);
+        rightLevelSlider.setRange (0.0, 0.25);
+        leftLevelSlider.setTextBoxStyle (Slider::TextBoxRight, false, 100, 20);
+        rightLevelSlider.setTextBoxStyle (Slider::TextBoxRight, false, 100, 20);
+        leftLevelLabel.setText ("Left Noise Level", dontSendNotification);
+        rightLevelLabel.setText ("Right Noise Level", dontSendNotification);
         
-        addAndMakeVisible (levelSlider);
-        addAndMakeVisible (levelLabel);
+        addAndMakeVisible (leftLevelSlider);
+        addAndMakeVisible (leftLevelLabel);
+        addAndMakeVisible (rightLevelSlider);
+        addAndMakeVisible (rightLevelLabel);
         
         setSize (600, 100);
         setAudioChannels (0, 2);
@@ -30,16 +35,15 @@ public:
 
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override
     {
-        const float level = (float) levelSlider.getValue();
-        
         for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
         {
+            const float level = channel == 0 ? (float) leftLevelSlider.getValue() : rightLevelSlider.getValue();
+            const float levelScale = level * 2.0f;
             float* const buffer = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
             
             for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
             {
-                const float noise = random.nextFloat() * 2.0f - 1.0f;
-                buffer[sample] = noise * level;
+                buffer[sample] = random.nextFloat() * levelScale - level;
             }
         }
     }
@@ -50,15 +54,19 @@ public:
 
     void resized() override
     {
-        levelLabel.setBounds (10, 10, 90, 20);
-        levelSlider.setBounds (100, 10, getWidth() - 110, 20);
+        leftLevelLabel.setBounds (10, 10, 90, 20);
+        leftLevelSlider.setBounds (100, 10, getWidth() - 110, 20);
+        rightLevelLabel.setBounds (10, 30, 90, 20);
+        rightLevelSlider.setBounds (100, 30, getWidth() - 110, 20);
     }
     
 
 private:
     Random random;
-    Slider levelSlider;
-    Label levelLabel;
+    Slider leftLevelSlider;
+    Slider rightLevelSlider;
+    Label leftLevelLabel;
+    Label rightLevelLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
