@@ -6,7 +6,8 @@
 
 class MainContentComponent   : public AudioAppComponent,
                                public ChangeListener,
-                               public Button::Listener
+                               public Button::Listener,
+                               public Timer
 {
 public:
     MainContentComponent()
@@ -28,12 +29,16 @@ public:
         stopButton.setColour (TextButton::buttonColourId, Colours::red);
         stopButton.setEnabled (false);
         
+        addAndMakeVisible (&timeLabel);
+        timeLabel.setText ("0", dontSendNotification);
+        
         setSize (300, 200);
         
         formatManager.registerBasicFormats();       // [1]
         transportSource.addChangeListener (this);   // [2]
 
         setAudioChannels (0, 2);
+        startTimer (20);
     }
     
     ~MainContentComponent()
@@ -67,6 +72,7 @@ public:
         openButton.setBounds (10, 10, getWidth() - 20, 20);
         playButton.setBounds (10, 40, getWidth() - 20, 20);
         stopButton.setBounds (10, 70, getWidth() - 20, 20);
+        timeLabel.setBounds (10, 130, getWidth() - 20, 20);
     }
     
     void changeListenerCallback (ChangeBroadcaster* source) override
@@ -75,9 +81,17 @@ public:
         {
             if (transportSource.isPlaying())
                 changeState (Playing);
-            else
+            else if ((state == Stopping) || (state == Playing))
                 changeState (Stopped);
+            else if (Pausing == state)
+                changeState (Paused);
         }
+    }
+    
+    void timerCallback() override
+    {
+        double currentTime = transportSource.getCurrentPosition();
+        timeLabel.setText (String (currentTime), dontSendNotification);
     }
 
     void buttonClicked (Button* button) override
@@ -93,6 +107,8 @@ private:
         Stopped,
         Starting,
         Playing,
+        Pausing,
+        Paused,
         Stopping
     };
     
@@ -105,18 +121,29 @@ private:
             switch (state)
             {
                 case Stopped:                           // [3]
+                    playButton.setButtonText ("Play");
+                    stopButton.setButtonText ("Stop");
                     stopButton.setEnabled (false);
-                    playButton.setEnabled (true);
                     transportSource.setPosition (0.0);
                     break;
                     
                 case Starting:                          // [4]
-                    playButton.setEnabled (false);
                     transportSource.start();
                     break;
                     
                 case Playing:                           // [5]
+                    playButton.setButtonText ("Pause");
+                    stopButton.setButtonText ("Stop");
                     stopButton.setEnabled (true);
+                    break;
+                    
+                case Pausing:
+                    transportSource.stop();
+                    break;
+                
+                case Paused:
+                    playButton.setButtonText ("Resume");
+                    stopButton.setButtonText ("Return to Zero");
                     break;
                     
                 case Stopping:                          // [6]
@@ -130,7 +157,7 @@ private:
     {
         FileChooser chooser ("Select a Wave file to play...",
                              File::nonexistent,
-                             "*.wav");                                        // [7]
+                             "*.wav;*.aif;*.aiff");                           // [7]
         
         if (chooser.browseForFileToOpen())                                    // [8]
         {
@@ -149,18 +176,26 @@ private:
     
     void playButtonClicked()
     {
-        changeState (Starting);
+        if ((state == Stopped) || (state == Paused))
+            changeState (Starting);
+        else if (state == Playing)
+            changeState (Pausing);
     }
     
     void stopButtonClicked()
     {
-        changeState (Stopping);
+        if (state == Paused)
+            changeState (Stopped);
+        else
+            changeState (Stopping);
     }
     
     //==========================================================================
     TextButton openButton;
     TextButton playButton;
     TextButton stopButton;
+    
+    Label timeLabel;
     
     AudioFormatManager formatManager;
     ScopedPointer<AudioFormatReaderSource> readerSource;
