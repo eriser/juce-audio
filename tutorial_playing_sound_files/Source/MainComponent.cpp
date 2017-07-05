@@ -75,8 +75,10 @@ public:
         {
             if (transportSource.isPlaying())
                 changeState (Playing);
-            else
+            else if ((state == Stopping) || (state == Playing))
                 changeState (Stopped);
+            else if (Pausing == state)
+                changeState (Paused);
         }
     }
 
@@ -93,6 +95,8 @@ private:
         Stopped,
         Starting,
         Playing,
+        Pausing,
+        Paused,
         Stopping
     };
     
@@ -105,18 +109,29 @@ private:
             switch (state)
             {
                 case Stopped:                           // [3]
+                    playButton.setButtonText ("Play");
+                    stopButton.setButtonText ("Stop");
                     stopButton.setEnabled (false);
-                    playButton.setEnabled (true);
                     transportSource.setPosition (0.0);
                     break;
                     
                 case Starting:                          // [4]
-                    playButton.setEnabled (false);
                     transportSource.start();
                     break;
                     
                 case Playing:                           // [5]
+                    playButton.setButtonText ("Pause");
+                    stopButton.setButtonText ("Stop");
                     stopButton.setEnabled (true);
+                    break;
+                    
+                case Pausing:
+                    transportSource.stop();
+                    break;
+                
+                case Paused:
+                    playButton.setButtonText ("Resume");
+                    stopButton.setButtonText ("Return to Zero");
                     break;
                     
                 case Stopping:                          // [6]
@@ -149,12 +164,18 @@ private:
     
     void playButtonClicked()
     {
-        changeState (Starting);
+        if ((state == Stopped) || (state == Paused))
+            changeState (Starting);
+        else if (state == Playing)
+            changeState (Pausing);
     }
     
     void stopButtonClicked()
     {
-        changeState (Stopping);
+        if (state == Paused)
+            changeState (Stopped);
+        else
+            changeState (Stopping);
     }
     
     //==========================================================================
