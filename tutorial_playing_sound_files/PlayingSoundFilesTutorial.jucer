@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="XeHRn4" name="PlayingSoundFilesTutorial" projectType="guiapp"
               version="1.0.0" bundleIdentifier="com.juce.PlayingSoundFilesTutorial"
-              includeBinaryInAppConfig="1" jucerVersion="5.0.1" displaySplashScreen="0"
+              includeBinaryInAppConfig="1" jucerVersion="4.3.1" displaySplashScreen="0"
               reportAppUsage="0" splashScreenColour="Dark">
   <MAINGROUP id="BNpHuD" name="PlayingSoundFilesTutorial">
     <GROUP id="{B1795414-5B06-F2B5-EC13-A53FD0B4EDE6}" name="Source">

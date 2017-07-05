@@ -130,7 +130,7 @@ private:
     {
         FileChooser chooser ("Select a Wave file to play...",
                              File::nonexistent,
-                             "*.wav");                                        // [7]
+                             "*.wav;*.aif;*.aiff");                           // [7]
         
         if (chooser.browseForFileToOpen())                                    // [8]
         {
