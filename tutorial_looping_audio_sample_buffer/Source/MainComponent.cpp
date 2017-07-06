@@ -5,10 +5,13 @@
 
 
 class MainContentComponent   : public AudioAppComponent,
-                               private ButtonListener
+                               private ButtonListener,
+                               private SliderListener
 {
 public:
     MainContentComponent()
+    :   currentLevel (0.125f),
+        targetLevel (currentLevel)
     {
         addAndMakeVisible (openButton);
         openButton.setButtonText ("Open...");
@@ -17,7 +20,16 @@ public:
         addAndMakeVisible (clearButton);
         clearButton.setButtonText ("Clear");
         clearButton.addListener (this);
+        
+        levelSlider.setRange (0.0, 0.25);
+        levelSlider.setTextBoxStyle (Slider::TextBoxRight, false, 100, 20);
+        levelLabel.setText ("Level", dontSendNotification);
+        levelSlider.setValue (currentLevel);
+        levelSlider.addListener(this);
 
+        addAndMakeVisible (levelSlider);
+        addAndMakeVisible (levelLabel);
+        
         setSize (300, 200);
 
         formatManager.registerBasicFormats();
@@ -53,6 +65,9 @@ public:
                                                channel % numInputChannels,                      //  [12.3]
                                                position,                                        //  [12.4]
                                                samplesThisTime);                                //  [12.5]
+                
+                const float localTargetLevel = currentLevel + ((targetLevel - currentLevel) * (samplesThisTime/bufferToFill.numSamples));
+                bufferToFill.buffer->applyGainRamp (bufferToFill.startSample, samplesThisTime, currentLevel, localTargetLevel);
             }
 
             outputSamplesRemaining -= samplesThisTime;                                          // [13]
@@ -61,6 +76,8 @@ public:
 
             if (position == fileBuffer.getNumSamples())
                 position = 0;                                                                   // [16]
+            
+            currentLevel = targetLevel;
         }
     }
 
@@ -73,12 +90,20 @@ public:
     {
         openButton.setBounds (10, 10, getWidth() - 20, 20);
         clearButton.setBounds (10, 40, getWidth() - 20, 20);
+        levelLabel.setBounds (10, 70, 90, 20);
+        levelSlider.setBounds (100, 70, getWidth() - 110, 20);
     }
 
     void buttonClicked (Button* button) override
     {
         if (button == &openButton)      openButtonClicked();
         if (button == &clearButton)     clearButtonClicked();
+    }
+    
+    void sliderValueChanged (Slider* slider) override
+    {
+        if (slider == &levelSlider)
+            targetLevel = (float) levelSlider.getValue();
     }
 
 private:
@@ -114,6 +139,10 @@ private:
                 else
                 {
                     // handle the error that the file is 2 seconds or longer..
+                    String title, message;
+                    title << "File Error" ;
+                    message << "File too long, select a file smaller than 2s";
+                    AlertWindow::showOkCancelBox(AlertWindow::WarningIcon, title, message);
                 }
             }
         }
@@ -127,10 +156,13 @@ private:
     //==========================================================================
     TextButton openButton;
     TextButton clearButton;
+    Slider levelSlider;
+    Label levelLabel;
 
     AudioFormatManager formatManager;
     AudioSampleBuffer fileBuffer;
     int position;
+    float currentLevel, targetLevel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
