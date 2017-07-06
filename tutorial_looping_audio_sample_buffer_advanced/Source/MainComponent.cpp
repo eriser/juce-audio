@@ -141,6 +141,7 @@ private:
     {
         while (! threadShouldExit())
         {
+            checkForPathToOpen();
             checkForBuffersToFree();
             wait (500);
         }
@@ -166,6 +167,20 @@ private:
         if (chooser.browseForFileToOpen())
         {
             const File file (chooser.getResult());
+            String path (file.getFullPathName());
+            swapVariables (chosenPath, path);
+            notify();
+        }
+    }
+    
+    void checkForPathToOpen()
+    {
+        String pathToOpen;
+        swapVariables (pathToOpen, chosenPath);
+        
+        if(pathToOpen.isNotEmpty())
+        {
+            const File file (pathToOpen);
             ScopedPointer<AudioFormatReader> reader (formatManager.createReaderFor (file));
 
             if (reader != nullptr)
@@ -185,6 +200,10 @@ private:
                 else
                 {
                     // handle the error that the file is 2 seconds or longer..
+                    String title, message;
+                    title << "File Error!!!";
+                    message << "Selected file is longer than 2s, please select a smaller file.";
+                    AlertWindow::showOkCancelBox(AlertWindow::WarningIcon, title, message);
                 }
             }
         }
@@ -205,6 +224,8 @@ private:
     ReferenceCountedBuffer::Ptr currentBuffer;
     
     LookAndFeel_V3 lookAndFeel;
+    
+    String chosenPath;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
